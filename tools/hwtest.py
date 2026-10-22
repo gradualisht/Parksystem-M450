@@ -6,7 +6,7 @@ Parkhaus-WLAN steht (der Schranken-Pico hat sich mit der Kasse verbunden).
 
 Der Test sendet serielle Kommandos, die Schranke fragt dabei ueber WLAN die Kasse ab. Er prueft
 User Stories US1 bis US7 (Einfahrt, Anzeige, Registrierung, Gebuehr, Bezahlung, Ausfahrt, Ruftaste ohne
-Personal-Freigabe). Die Personal-Freigabe (US7) und der Datenschutz (US8) prueft hwtest_http.py.
+Personal-Freigabe). Die Personal-Freigabe (US7) und der Datenschutz (US8) prueft hwtest_http.py (noch nicht gegen Hardware gelaufen).
 
 Aufruf:  python3 tools/hwtest.py        (benoetigt pyserial, z. B. aus der PlatformIO-Umgebung)
 """
