@@ -128,6 +128,9 @@ class ParkingDb {
 
   const std::vector<ParkRecord> &records() const;
 
+  // Leert alle Datensaetze (Demo/Test), die Kapazitaet bleibt.
+  void clear();
+
  private:
   int findParked(const std::string &id) const;
   void addRecord(const std::string &id, bool isTicket, uint32_t nowSec);

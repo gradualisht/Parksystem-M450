@@ -28,13 +28,18 @@ struct Barrier {
   const char *name;
   Servo *servo;
   uint8_t pin;
-  bool isOpen;
+  bool isOpen;           // Sollzustand (Oeffnen angeordnet, noch nicht wieder geschlossen)
   uint32_t closeAtMs;
-  std::string text;  // Anzeigetext am Tor
+  std::string text;      // Anzeigetext am Tor
+  int angle;             // aktuell angefahrener Winkel
+  int target;            // Zielwinkel
+  uint32_t lastStepMs;
 };
 
-static Barrier entryGate = {"einfahrt", &entryServo, PIN_SERVO_EINFAHRT, false, 0, "Bereit."};
-static Barrier exitGate = {"ausfahrt", &exitServo, PIN_SERVO_AUSFAHRT, false, 0, "Bereit."};
+static Barrier entryGate = {"einfahrt", &entryServo, PIN_SERVO_EINFAHRT, false, 0, "Bereit.",
+                            SERVO_ANGLE_CLOSED, SERVO_ANGLE_CLOSED, 0};
+static Barrier exitGate = {"ausfahrt", &exitServo, PIN_SERVO_AUSFAHRT, false, 0, "Bereit.",
+                           SERVO_ANGLE_CLOSED, SERVO_ANGLE_CLOSED, 0};
 
 struct Outcome {
   std::string result;   // z. B. OK, FULL, UNPAID, NOT_RECOGNIZED, KASSE_OFFLINE
@@ -85,23 +90,51 @@ static void logEvent(const char *fmt, ...) {
 
 // ---- Schranken (US1, US6) ---------------------------------------------------
 
+// Startet die Bewegung zum Zielwinkel. Der erste Schritt erfolgt sofort (NFR1),
+// die weiteren Schritte fahren in barrierUpdate().
+static void barrierMoveTo(Barrier &b, int target) {
+  b.target = target;
+  b.lastStepMs = millis() - SERVO_STEP_MS;
+}
+
 static void barrierOpen(Barrier &b) {
-  b.servo->write(SERVO_ANGLE_OPEN);
+  barrierMoveTo(b, SERVO_ANGLE_OPEN);
   b.isOpen = true;
   b.closeAtMs = millis() + BARRIER_OPEN_MS;
 }
 
 static void barrierClose(Barrier &b) {
-  b.servo->write(SERVO_ANGLE_CLOSED);
+  barrierMoveTo(b, SERVO_ANGLE_CLOSED);
   b.isOpen = false;
 }
 
-// Schliesst die Schranke nach BARRIER_OPEN_MS; Vergleich ist bei millis()-Ueberlauf korrekt.
+// Faehrt die Bewegung schrittweise und schliesst die Schranke nach BARRIER_OPEN_MS.
+// Alle Zeitvergleiche sind bei einem millis()-Ueberlauf korrekt.
 static void barrierUpdate(Barrier &b) {
-  if (b.isOpen && (int32_t)(millis() - b.closeAtMs) >= 0) {
+  uint32_t now = millis();
+  if (b.angle != b.target) {
+    if (now - b.lastStepMs >= SERVO_STEP_MS) {
+      b.lastStepMs = now;
+      int diff = b.target - b.angle;
+      int step = diff > 0 ? (diff < SERVO_STEP_DEG ? diff : SERVO_STEP_DEG)
+                          : (-diff < SERVO_STEP_DEG ? diff : -SERVO_STEP_DEG);
+      b.angle += step;
+      b.servo->write(b.angle);
+    }
+  }
+  if (b.isOpen && (int32_t)(now - b.closeAtMs) >= 0) {
     barrierClose(b);
     logEvent("BARRIER gate=%s state=closed", b.name);
   }
+}
+
+// Fahrt in die Grundstellung beim Start, die Servos nacheinander (geringerer Anlaufstrom).
+// Die Servos bleiben danach angehaengt: Servo::detach() des Cores wartet unbegrenzt auf den
+// PIO-Zustand "halt" und kann die Hauptschleife blockieren.
+static void barrierInit(Barrier &b) {
+  b.servo->attach(b.pin, 500, 2400);
+  b.servo->write(SERVO_ANGLE_CLOSED);
+  delay(SERVO_INIT_MS);
 }
 
 // ---- Kasse abfragen --------------------------------------------------------
@@ -109,6 +142,7 @@ static void barrierUpdate(Barrier &b) {
 // Liefert den HTTP-Code, bei einem Verbindungsfehler einen Wert <= 0.
 static int kasseRequest(bool post, const std::string &path, std::string &out) {
   HTTPClient http;
+  rp2040.wdt_reset();  // Verbindungsaufbau (bis 5 s) und Antwort (2 s) bleiben unter dem Watchdog
   http.setReuse(false);
   http.setTimeout(2000);
   if (!http.begin(String(KASSE_BASE_URL) + path.c_str())) {
@@ -258,7 +292,15 @@ static void pollCall() {
   lastCallPollMs = millis();
   Barrier &gate = callOutbound ? exitGate : entryGate;
   std::string body;
-  if (kasseRequest(false, "/api/callstatus?call=" + num(callNo), body) != 200) {
+  int code = kasseRequest(false, "/api/callstatus?call=" + num(callNo), body);
+  if (code == 404) {
+    // Kasse kennt die Anfrage nicht mehr (z. B. nach einem Neustart): nicht ewig warten.
+    callActive = false;
+    gate.text = "Die Anfrage ist der Kasse nicht mehr bekannt. Bitte die Ruftaste erneut drücken.";
+    logEvent("CALL gate=%s no=%u state=UNKNOWN", gate.name, (unsigned)callNo);
+    return;
+  }
+  if (code != 200) {
     return;
   }
   std::string state = jsonGetString(body, "state", "pending");
@@ -321,10 +363,10 @@ static void handleCallRequest() {
 // ---- Serielle Kommandos ----------------------------------------------------
 
 static void printStatus() {
-  Serial.printf("STATUS wifi=%d kasse=%d free=%d capacity=%d entry=%s exit=%s call=%d ip=%s\n",
+  Serial.printf("STATUS wifi=%d kasse=%d free=%d capacity=%d entry=%s exit=%s call=%d ip=%s up=%u\n",
                 WiFi.status() == WL_CONNECTED ? 1 : 0, kasseOnline ? 1 : 0, lastFree, lastCapacity,
                 entryGate.isOpen ? "open" : "closed", exitGate.isOpen ? "open" : "closed", callActive ? 1 : 0,
-                WiFi.localIP().toString().c_str());
+                WiFi.localIP().toString().c_str(), (unsigned)(millis() / 1000));
 }
 
 static void handleCommand(char *line) {
@@ -337,6 +379,11 @@ static void handleCommand(char *line) {
   const char *cmd = line;
   if (strcmp(cmd, "status") == 0) {
     printStatus();
+  } else if (strcmp(cmd, "log") == 0) {
+    for (size_t i = 0; i < eventLog.size(); i++) {
+      Serial.println(eventLog[i].c_str());
+    }
+    Serial.println("LOG_END");
   } else if (strcmp(cmd, "enter") == 0) {
     doEntry(arg);
   } else if (strcmp(cmd, "exit") == 0) {
@@ -405,10 +452,8 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  entryServo.attach(PIN_SERVO_EINFAHRT, 500, 2400);
-  exitServo.attach(PIN_SERVO_AUSFAHRT, 500, 2400);
-  barrierClose(entryGate);
-  barrierClose(exitGate);
+  barrierInit(entryGate);
+  barrierInit(exitGate);
 
   startWifi();
 
@@ -420,10 +465,13 @@ void setup() {
   server.on("/api/call", HTTP_POST, handleCallRequest);
   server.begin();
 
+  rp2040.wdt_begin(WATCHDOG_MS);  // haengt die Hauptschleife, startet die Schranke selbst neu
+
   Serial.printf("READY schranke einfahrt=GP%u ausfahrt=GP%u\n", (unsigned)PIN_SERVO_EINFAHRT, (unsigned)PIN_SERVO_AUSFAHRT);
 }
 
 void loop() {
+  rp2040.wdt_reset();
   keepWifi();
   server.handleClient();
   readSerial();

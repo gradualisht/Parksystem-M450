@@ -34,6 +34,14 @@ const uint8_t PIN_SERVO_AUSFAHRT = 9;   // GP9
 const int SERVO_ANGLE_CLOSED = 0;
 const int SERVO_ANGLE_OPEN = 90;
 const uint32_t BARRIER_OPEN_MS = 5000;  // Schranke schliesst nach 5 s von selbst
+// Sanfte Servo-Bewegung: Der SG90 haengt direkt an VBUS (USB). Ein Sprung von 0 auf 90 Grad
+// zieht kurz einen hohen Strom und kann den Pico per Spannungseinbruch zuruecksetzen.
+// Deshalb in Schritten fahren.
+const int SERVO_STEP_DEG = 3;
+const uint32_t SERVO_STEP_MS = 15;   // 90 Grad dauern so rund 0.45 s
+const uint32_t SERVO_INIT_MS = 700;  // Wartezeit je Servo beim Start (Grundstellung)
+// Watchdog der Schranke: startet neu, wenn die Hauptschleife laenger haengt (max. 8388 ms).
+const uint32_t WATCHDOG_MS = 8000;
 
 // Reaktionszeit (NFR1, US1/US6): Schranke muss innerhalb von 3 s oeffnen.
 const uint32_t MAX_REACTION_MS = 3000;

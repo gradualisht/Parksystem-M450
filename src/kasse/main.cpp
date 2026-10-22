@@ -21,7 +21,7 @@
 // Weboberflaeche: GET /, GET /api/state, GET /api/quote?id=..., POST /api/pay
 // Personal (HTTP Basic, US8): GET /staff, GET /api/staff/state, POST /api/staff/approve|reject|scale
 //
-// Serielle Kommandos (USB, 115200): status | list | quote <id> | pay <id> <karte|twint> | scale <n>
+// Serielle Kommandos (USB, 115200): status | list | quote <id> | pay <id> <karte|twint> | scale <n> | reset
 
 static WebServer server(80);
 static ParkingDb db(PARK_CAPACITY);
@@ -356,12 +356,17 @@ static void handleCommand(char *line) {
     Serial.print(result.c_str());
     Serial.print(" ");
     Serial.println(message.c_str());
+  } else if (strcmp(cmd, "reset") == 0) {
+    db.clear();
+    calls.clear();
+    nextCallNo = 1;
+    logEvent("RESET records cleared");
   } else if (strcmp(cmd, "scale") == 0 && arg1 != NULL) {
     simClock.update(millis());
     bool ok = simClock.setScale((uint32_t)atoi(arg1));
     Serial.printf("SCALE %s value=%u\n", ok ? "OK" : "REJECTED", (unsigned)simClock.scale());
   } else {
-    Serial.println("UNKNOWN_COMMAND (status | list | quote <id> | pay <id> <karte|twint> | scale <n>)");
+    Serial.println("UNKNOWN_COMMAND (status | list | quote <id> | pay <id> <karte|twint> | scale <n> | reset)");
   }
 }
 

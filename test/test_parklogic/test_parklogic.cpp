@@ -317,6 +317,19 @@ void test_purge_keeps_parked_vehicles(void) {
   TEST_ASSERT_EQUAL_UINT32(1, db.records().size());
 }
 
+void test_clear_empties_database_and_restarts_numbering(void) {
+  ParkingDb db(3);
+  db.enter("ZH1", 0);
+  std::string code;
+  db.issueTicket(0, code);
+  db.clear();
+  TEST_ASSERT_EQUAL_UINT32(0, db.records().size());
+  TEST_ASSERT_EQUAL_UINT32(3, db.freeSpots());
+  db.issueTicket(0, code);
+  TEST_ASSERT_EQUAL_STRING("TK0001", code.c_str());
+  TEST_ASSERT_EQUAL_UINT32(1, db.records()[0].no);
+}
+
 int main(int argc, char **argv) {
   UNITY_BEGIN();
   RUN_TEST(test_normalize_uppercases_and_strips_separators);
@@ -355,5 +368,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_ticket_holder_can_pay_and_exit);
   RUN_TEST(test_purge_removes_exited_record_after_24_hours);
   RUN_TEST(test_purge_keeps_parked_vehicles);
+  RUN_TEST(test_clear_empties_database_and_restarts_numbering);
   return UNITY_END();
 }

@@ -279,3 +279,9 @@ uint32_t ParkingDb::purge(uint32_t nowSec) {
 }
 
 const std::vector<ParkRecord> &ParkingDb::records() const { return records_; }
+
+void ParkingDb::clear() {
+  records_.clear();
+  nextNo_ = 1;
+  nextTicket_ = 1;
+}
