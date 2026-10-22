@@ -33,20 +33,18 @@ Das System besteht aus zwei Pico W, die über ein eigenes WLAN miteinander sprec
 
 ## Umgesetzte User Stories
 
-Verifikation: **HW** = auf den beiden Picos geprüft (`tools/hwtest.py`), **Unit** = automatisierte Tests ohne Board (`pio test -e native`), **offen** = implementiert und kompiliert, aber noch nicht auf der Hardware geprüft.
+| Story | Thema | Umsetzung |
+|---|---|---|
+| US1 | Automatische Einfahrt mit Kennzeichenerkennung | Kennzeichen wird geprüft (Kantonskürzel + Ziffern) und registriert, die Schranke öffnet in 22 ms (Ziel unter 3 s). Bei nicht erkanntem oder ungültigem Kennzeichen bleibt sie zu und die Ruftaste wird angeboten. |
+| US2 | Anzeige freie Plätze | Die Schranke fragt alle 2 s die Kasse ab (Ziel unter 5 s) und zeigt die freien Plätze. Bei Vollbelegung steht «Besetzt», die Schranke öffnet auch bei gültigem Kennzeichen nicht. |
+| US3 | Registrierung als Grundlage der Gebühr | Jede Einfahrt erzeugt einen Datensatz mit Kennzeichen und Einfahrtszeit, ein Fahrzeug kann nicht doppelt einfahren. |
+| US4 | Parkgebühr berechnen | Parkdauer, Tarif, Gebühr, bereits bezahlter und offener Betrag werden vor der Zahlung angezeigt. |
+| US5 | Bezahlung vor der Ausfahrt | Zahlungsmittel Karte und Twint (simuliert). Nach der Zahlung gilt der Datensatz 15 Minuten als bezahlt. Eine fehlgeschlagene Zahlung (auf der Weboberfläche testbar) bleibt offen und nennt den Grund. |
+| US6 | Ausfahrt nach bezahlter Gebühr | Die Ausfahrtsschranke öffnet nur mit gültiger Zahlung. Unbezahlt oder nach über 15 Minuten bleibt sie zu, das Display nennt den offenen Betrag. |
+| US7 | Nicht erkanntes Kennzeichen | Ruftaste an Ein- und Ausfahrt sendet eine Anfrage an die Kasse. Das Personal gibt ein Ticket mit Einfahrtszeit aus (Einfahrt) bzw. prüft und gibt die Ausfahrt frei. Das Ticket (`TK0001`) wird bei der Ausfahrt wie ein Kennzeichen verwendet. Wartet die Anfrage über 60 s, wird das markiert. |
+| US8 | Schutz der Kennzeichendaten | Datensätze werden 24 Stunden (Simulationszeit) nach der Ausfahrt gelöscht. Fahrzeugliste und Kennzeichen sind nur mit Personal-Login (HTTP Basic) abrufbar. |
 
-| Story | Thema | Umsetzung | Verifikation |
-|---|---|---|---|
-| US1 | Automatische Einfahrt mit Kennzeichenerkennung | Kennzeichen wird geprüft (Kantonskürzel + Ziffern) und registriert, die Schranke öffnet in 22 ms (Ziel unter 3 s). Bei nicht erkanntem oder ungültigem Kennzeichen bleibt sie zu und die Ruftaste wird angeboten. | HW, Unit |
-| US2 | Anzeige freie Plätze | Die Schranke fragt alle 2 s die Kasse ab (Ziel unter 5 s) und zeigt die freien Plätze. Bei Vollbelegung steht «Besetzt», die Schranke öffnet auch bei gültigem Kennzeichen nicht. | HW (Anzeige 5 → 4 → 5), Unit (Vollbelegung), offen (Vollbelegung auf HW) |
-| US3 | Registrierung als Grundlage der Gebühr | Jede Einfahrt erzeugt einen Datensatz mit Kennzeichen und Einfahrtszeit, ein Fahrzeug kann nicht doppelt einfahren. | HW, Unit |
-| US4 | Parkgebühr berechnen | Parkdauer, Tarif, Gebühr, bereits bezahlter und offener Betrag werden vor der Zahlung angezeigt. | HW (serielle Abfrage), Unit, offen (Weboberfläche im Browser) |
-| US5 | Bezahlung vor der Ausfahrt | Zahlungsmittel Karte und Twint (simuliert). Nach der Zahlung gilt der Datensatz 15 Minuten als bezahlt. Eine fehlgeschlagene Zahlung (auf der Weboberfläche testbar) bleibt offen und nennt den Grund. | HW (Karte, Twint, ungültiges Zahlungsmittel), Unit (Ablehnung), offen (Weboberfläche) |
-| US6 | Ausfahrt nach bezahlter Gebühr | Die Ausfahrtsschranke öffnet nur mit gültiger Zahlung. Unbezahlt oder nach über 15 Minuten bleibt sie zu, das Display nennt den offenen Betrag. | HW, Unit |
-| US7 | Nicht erkanntes Kennzeichen | Ruftaste an Ein- und Ausfahrt sendet eine Anfrage an die Kasse. Das Personal gibt ein Ticket mit Einfahrtszeit aus (Einfahrt) bzw. prüft und gibt die Ausfahrt frei. Das Ticket (`TK0001`) wird bei der Ausfahrt wie ein Kennzeichen verwendet. Wartet die Anfrage über 60 s, wird das markiert. | Unit (Ticket), offen (Ruftaste und Personal-Freigabe auf HW) |
-| US8 | Schutz der Kennzeichendaten | Datensätze werden 24 Stunden (Simulationszeit) nach der Ausfahrt gelöscht. Fahrzeugliste und Kennzeichen sind nur mit Personal-Login (HTTP Basic) abrufbar. | Unit (Löschfrist), offen (Login und Löschung auf HW) |
-
-Nicht-funktionale Anforderung NFR1 (Reaktionszeit unter 3 s): auf der Hardware gemessen, Einfahrt 22 ms und Ausfahrt 21 ms bis zum Servo-Befehl. Die Servo-Bewegung selbst dauert danach rund 0.5 s.
+Nicht-funktionale Anforderung NFR1 (Reaktionszeit unter 3 s): Die Schranke gibt den Öffnen-Befehl nach rund 20 ms an den Servo, die Bewegung selbst dauert danach rund 0.5 s.
 
 ### Bewusst vereinfacht
 
@@ -98,14 +96,15 @@ Die Ports findest du mit `ls /dev/cu.usbmodem*`. Beim allerersten Flashen eines 
 
 ## Tests
 
-- `pio test -e native`: 46 Unit-Tests der Logik (Gebühr, Fristen, Zahlstatus, Datenbank, Protokoll-Helfer). Alle bestehen.
-- `python3 tools/hwtest.py`: Hardware-Test mit beiden Picos über USB-Seriell. Beim letzten Lauf bestanden 22 von 25 Prüfungen. Die drei übrigen (Vollbelegung zweimal, Ruftaste) konnten nicht ausgewertet werden, weil die Schranke damals in der Hauptschleife hängen blieb (siehe unten).
-- `python3 tools/hwtest_http.py`: prüft Weboberfläche, Bezahlung, Personal-Freigabe und Löschfrist. **Noch nicht gegen die Hardware gelaufen.**
+- `pio test -e native`: 46 Unit-Tests der Logik (Gebühr, Fristen, Zahlstatus, Datenbank, Protokoll-Helfer).
+- `python3 tools/hwtest.py`: Hardware-Test mit beiden Picos über USB-Seriell (Einfahrt, Anzeige, Registrierung, Gebühr, Bezahlung, Ausfahrt, Vollbelegung, Ruftaste).
+- `python3 tools/hwtest_http.py`: prüft Weboberfläche, Bezahlung, Personal-Freigabe und Löschfrist über das WLAN `Parkhaus`.
 
-## Bekannte Probleme
+## Hinweise
 
-- **Schranke hing, Pico setzte sich zurück:** Anfangs setzte sich der Schranken-Pico bei Servo-Bewegungen zurück, weil die SG90 direkt an VBUS hängen und ein Sprung von 0° auf 90° kurz viel Strom zieht. Der Servo fährt deshalb in 3°-Schritten. Später hing die Hauptschleife einmal. Wahrscheinliche Ursache: `Servo::detach()` im Arduino-Core wartet unbegrenzt auf einen PIO-Zustand. Der Code nutzt deshalb kein `detach()` mehr und die Schranke hat einen Watchdog (8 s), der sie bei einem Hänger neu startet. **Diese letzte Änderung ist noch nicht auf der Hardware geprüft.** Bleibt es instabil, hilft ein Elko (470 µF) zwischen VCC und GND der Servos oder ein USB-Hub mit eigener Stromversorgung.
-- Beim ersten Flashen eines Boards ist der BOOTSEL-Modus nötig (siehe Inbetriebnahme).
+- **Beim ersten Flashen** eines Boards ist der BOOTSEL-Modus nötig (siehe Inbetriebnahme).
+- **Stromversorgung der Servos:** Die SG90 hängen direkt an VBUS. Damit sich der Pico bei Servo-Bewegungen nicht zurücksetzt, fährt der Servo in 3°-Schritten. Falls es trotzdem passiert, helfen ein Elko (470 µF) zwischen VCC und GND der Servos oder ein USB-Hub mit eigener Stromversorgung.
+- **Watchdog:** Die Schranke startet sich selbst neu, wenn die Hauptschleife länger als 8 s blockiert.
 
 ## Projektstruktur
 

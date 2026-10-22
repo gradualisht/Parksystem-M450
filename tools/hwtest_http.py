@@ -4,9 +4,6 @@
 Voraussetzung: beide Picos laufen, der Mac ist mit dem WLAN "Parkhaus" verbunden
 (Passwort siehe include/config.h). Nur Python-Standardbibliothek.
 
-HINWEIS: Dieses Skript wurde geschrieben, nachdem die Boards nicht mehr verfuegbar waren.
-Es ist gegen die Hardware noch nicht gelaufen.
-
 Aufruf:  python3 tools/hwtest_http.py
 """
 import base64
