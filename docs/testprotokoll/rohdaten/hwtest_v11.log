@@ -1,0 +1,28 @@
+Kasse: /dev/cu.usbmodem1101 | Schranke: /dev/cu.usbmodem101
+PASS - WLAN: Schranke ist mit der Kasse verbunden und kennt die freien Plaetze | STATUS wifi=1 kasse=1 free=5 capacity=5 entry=closed exit=closed call=0 ip=192.168.4.100 up=25
+PASS - US1: gueltiges Kennzeichen -> Schranke oeffnet | t=26s RESULT gate=einfahrt id=ZH123456 result=OK opened=1 latency_ms=22 free=4
+PASS - NFR1: Einfahrtsschranke oeffnet innerhalb von 3 s | 22 ms
+PASS - US2: Anzeige zeigt nach Einfahrt 4 freie Plaetze | t=26s RESULT gate=einfahrt id=ZH123456 result=OK opened=1 latency_ms=22 free=4
+PASS - US1: Einfahrtsschranke ist offen (Servo gefahren) | STATUS wifi=1 kasse=1 free=4 capacity=5 entry=open exit=closed call=0 ip=192.168.4.100 up=26
+PASS - US1: Einfahrtsschranke schliesst nach 5 s automatisch | STATUS wifi=1 kasse=1 free=4 capacity=5 entry=closed exit=closed call=0 ip=192.168.4.100 up=31
+PASS - US3: Kasse hat Datensatz mit Kennzeichen und Einfahrtszeit | RECORD no=1 id=ZH123456 entry=T1 08:42:04 exited=0 paid=0.00
+PASS - US1: ungueltiges Kennzeichen -> Schranke bleibt zu | t=32s RESULT gate=einfahrt id=XX1 result=INVALID opened=0 latency_ms=22 free=4
+PASS - US1/US7: Kennzeichen nicht erkannt -> Schranke bleibt zu | t=32s RESULT gate=einfahrt id= result=NOT_RECOGNIZED opened=0 latency_ms=0 free=4
+PASS - US3: gleiches Fahrzeug kann nicht doppelt einfahren | t=32s RESULT gate=einfahrt id=ZH123456 result=DUPLICATE opened=0 latency_ms=22 free=4
+PASS - US4: Kasse zeigt Parkdauer, Gebuehr und offenen Betrag | QUOTE {"found":true,"id":"ZH123456","entry":"T1 08:42:04","duration":"00:08:55","tariff":"CHF 2.00 pro angefangene 30 Minuten","fee":"2.00","paid":"0.00","due":"2.00","payValid":false,"validLeftMin":0}
+PASS - US6: unbezahlt -> Ausfahrtsschranke bleibt zu, Betrag wird angezeigt | t=35s RESULT gate=ausfahrt id=ZH123456 result=UNPAID opened=0 latency_ms=25 free=4
+PASS - US6: Ausfahrtsschranke ist geschlossen | STATUS wifi=1 kasse=1 free=4 capacity=5 entry=closed exit=closed call=0 ip=192.168.4.100 up=35
+PASS - US5: Bezahlung mit Karte erfolgreich | PAY_RESULT OK Zahlung von CHF 2.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.
+PASS - US5: nicht unterstuetztes Zahlungsmittel wird abgelehnt | PAY_RESULT BAD_METHOD Zahlungsmittel nicht unterstützt. Bitte Karte oder Twint wählen.
+PASS - US6: bezahlt -> Ausfahrtsschranke oeffnet | t=36s RESULT gate=ausfahrt id=ZH123456 result=OPEN opened=1 latency_ms=23 free=5
+PASS - NFR1: Ausfahrtsschranke oeffnet innerhalb von 3 s | 23 ms
+PASS - US2: Anzeige zeigt nach Ausfahrt wieder 5 freie Plaetze | t=36s RESULT gate=ausfahrt id=ZH123456 result=OPEN opened=1 latency_ms=23 free=5
+PASS - US6: Ausfahrtsschranke ist offen (Servo gefahren) | STATUS wifi=1 kasse=1 free=5 capacity=5 entry=closed exit=open call=0 ip=192.168.4.100 up=36
+PASS - US6: Zahlung aelter als 15 Minuten -> Ausfahrt bleibt zu | t=45s RESULT gate=ausfahrt id=BE4711 result=EXPIRED opened=0 latency_ms=22 free=4
+PASS - US5: nach Ablauf wird nur der Differenzbetrag verlangt | PAY_RESULT OK Zahlung von CHF 2.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.
+PASS - US6: nach erneuter Zahlung oeffnet die Ausfahrt | t=46s RESULT gate=ausfahrt id=BE4711 result=OPEN opened=1 latency_ms=23 free=5
+PASS - US2: bei Vollbelegung zeigt die Anzeige 0 freie Plaetze | STATUS wifi=1 kasse=1 free=0 capacity=5 entry=open exit=closed call=0 ip=192.168.4.100 up=52
+PASS - US2: bei Vollbelegung bleibt die Schranke zu (gueltiges Kennzeichen) | t=53s RESULT gate=einfahrt id=ZH6 result=FULL opened=0 latency_ms=22 free=0
+PASS - US7: Ruftaste sendet Anfrage an die Kasse | t=58s CALL gate=einfahrt no=1 state=PENDING
+
+25 von 25 Pruefungen bestanden

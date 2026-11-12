@@ -96,7 +96,8 @@ Die Ports findest du mit `ls /dev/cu.usbmodem*`. Beim allerersten Flashen eines 
 
 ## Tests
 
-- `pio test -e native`: 46 Unit-Tests der Logik (Gebühr, Fristen, Zahlstatus, Datenbank, Protokoll-Helfer).
+- `pio test -e native`: 51 Unit-Tests der Logik (Gebühr, Fristen, Zahlstatus, Datenbank, Protokoll-Helfer, Pseudonymisierung).
+- `python3 tools/testprotokoll.py ergebnis.json`: führt TC01 bis TC22 und den explorativen Test E1 des Testkonzepts über die HTTP-Schnittstellen aus. Resultate: [`docs/testprotokoll/`](docs/testprotokoll/Testprotokoll-Parksystem.pdf) (Protokoll als PDF, Rohdaten in `rohdaten/`).
 - `python3 tools/hwtest.py`: Hardware-Test mit beiden Picos über USB-Seriell (Einfahrt, Anzeige, Registrierung, Gebühr, Bezahlung, Ausfahrt, Vollbelegung, Ruftaste).
 - `python3 tools/hwtest_http.py`: prüft Weboberfläche, Bezahlung, Personal-Freigabe und Löschfrist über das WLAN `Parkhaus`.
 
@@ -105,6 +106,8 @@ Die Ports findest du mit `ls /dev/cu.usbmodem*`. Beim allerersten Flashen eines 
 - **Beim ersten Flashen** eines Boards ist der BOOTSEL-Modus nötig (siehe Inbetriebnahme).
 - **Stromversorgung der Servos:** Die SG90 hängen direkt an VBUS. Damit sich der Pico bei Servo-Bewegungen nicht zurücksetzt, fährt der Servo in 3°-Schritten. Falls es trotzdem passiert, helfen ein Elko (470 µF) zwischen VCC und GND der Servos oder ein USB-Hub mit eigener Stromversorgung.
 - **Watchdog:** Die Schranke startet sich selbst neu, wenn die Hauptschleife länger als 8 s blockiert.
+- **Zugangsdaten sind Demo-Werte:** WLAN-Passwort, Personal-Passwort und Geräte-Token (`DEVICE_TOKEN`) stehen in `include/config.h`, damit die Vorführung ohne Einrichtung läuft. Vor einem echten Einsatz ändern (Testprotokoll, Auflage A2). Die Verbindungen sind unverschlüsseltes HTTP im geschlossenen WLAN.
+- **Versionen:** Tag `v1.0` ist der Stand vor dem Testlauf, Tag `v1.1` enthält die Fixes F1 bis F3 aus dem Testprotokoll.
 
 ## Projektstruktur
 

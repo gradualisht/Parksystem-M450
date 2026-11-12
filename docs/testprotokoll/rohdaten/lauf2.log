@@ -1,0 +1,155 @@
+START 2026-11-12 13:41:29
+Ausgangslage: {'free': 5, 'capacity': 5, 'occupied': 0, 'simTime': 'T1 10:10:29', 'scale': 20, 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'validMinutes': 15} | Schranke: 5 freie Plaetze
+
+== TC01: Einfahrt mit gueltigem Kennzeichen oeffnet die Einfahrtsschranke rechtzeitig
+  PASS - Ergebnis OK, Schranke geoeffnet | {'t': '82s', 'gate': 'einfahrt', 'id': '#a268', 'result': 'OK', 'opened': '1', 'latency_ms': '22', 'free': '4'}
+  PASS - Reaktionszeit unter 3 s (HTTP-Gesamtdauer) | 44 ms gesamt, Schranke intern 22 ms
+  PASS - Anzeige am Tor | Willkommen, die Schranke öffnet. Freie Plätze: 4.
+  => PASS
+
+== TC02: Einfahrtsdaten werden korrekt gespeichert
+  PASS - Datensatz vorhanden | {'no': 1, 'id': 'ZH123456', 'ticket': False, 'entry': 'T1 10:10:30', 'exited': False, 'exit': '', 'paid': ''}
+  PASS - Einfahrtszeit liegt zwischen Eingabe und Abruf | T1 10:10:30 (Simulationszeit vor/nach Eingabe: 36630/36631 s)
+  PASS - Fahrzeug ist als eingefahren (nicht ausgefahren) gefuehrt
+  => PASS
+
+== TC03: Ungueltiges oder leeres Kennzeichen loest den Fallback aus
+  PASS - leeres Feld: Schranke bleibt zu | NOT_RECOGNIZED
+  PASS - leeres Feld: Anzeige bietet die Ruftaste an | Kennzeichen nicht erkannt. Bitte die Ruftaste drücken.
+  PASS - Wert '??-???': Schranke bleibt zu | INVALID
+  PASS - Wert '??-???': Anzeige bietet die Ruftaste an | Kennzeichen nicht erkannt. Bitte die Ruftaste drücken.
+  PASS - Kein neuer Datensatz
+  => PASS
+
+== TC04: Anzeige freier Plaetze aktualisiert sich nach einer Einfahrt
+  PASS - Einfahrt OK | OK
+  PASS - Anzeige um 1 reduziert innerhalb von 5 s | 4 -> 3 nach 0.0 s
+  => PASS
+
+== TC08: Datensaetze zweier gleichzeitig anwesender Fahrzeuge bleiben eindeutig zugeordnet
+  PASS - Zwei getrennte Datensaetze vorhanden | Nr. 1 und 2
+  PASS - Datensatz AG987654 unveraendert | {'no': 2, 'id': 'AG987654', 'ticket': False, 'entry': 'T1 10:10:36', 'exited': False, 'exit': '', 'paid': ''}
+  PASS - Datensatz ZH123456 behaelt Einfahrtszeit | T1 10:10:30
+  => PASS
+
+== TC09: Korrekte Gebuehrenberechnung bei kurzer Parkdauer
+  PASS - Parkdauer entspricht der Standzeit (+/- 60 s Simulation) | 00:00:09 angezeigt, 10 s aus Einfahrtszeit
+  PASS - Parkdauer hoechstens 30 Minuten | 00:00:09
+  PASS - Betrag CHF 2.00 | Gebuehr 2.00, offen 2.00
+  => PASS
+
+== TC11: Gebuehr ist vor dem Ausloesen der Zahlung einsehbar
+  PASS - Betrag und Parkdauer werden angezeigt | {'found': True, 'id': 'ZH123456', 'entry': 'T1 10:10:30', 'duration': '00:00:10', 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'fee': '2.00', 'paid': '0.00', 'due': '2.00', 'payValid': False, 'validLeftMin': 0}
+  PASS - Noch keine Zahlung erfasst | leer
+  => PASS
+
+== TC10: Korrekte Gebuehrenberechnung bei laengerer Parkdauer ueber mehrere Tarifeinheiten
+  PASS - Einfahrt OK | OK
+  PASS - Parkdauer ueber 1 Stunde | 01:03:06
+  PASS - Betrag = 3 angefangene Einheiten x CHF 2.00 = CHF 6.00 | Dauer 01:03:06, Betrag CHF 6.00
+  => PASS
+
+(TC17-Vorbereitung) Einfahrt: OK | Zahlung: OK
+
+== TC12: Erfolgreiche Zahlung mit erstem Zahlungsmittel (Karte) markiert den Datensatz als bezahlt
+  PASS - Zahlung erfolgreich | Zahlung von CHF 6.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.
+  PASS - Status bezahlt, gueltig fuer die Ausfahrt | offen 0.00, noch gueltig 15 min
+  PASS - Datensatz traegt den bezahlten Betrag | 6.00
+  => PASS
+
+== TC13: Erfolgreiche Zahlung mit zweitem Zahlungsmittel (Twint) markiert den Datensatz als bezahlt
+  PASS - Zahlung erfolgreich | Zahlung von CHF 6.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.
+  PASS - Status bezahlt, gueltig fuer die Ausfahrt | offen 0.00, noch gueltig 15 min
+  => PASS
+
+== TC14: Fehlgeschlagene Zahlung hinterlaesst den Datensatz auf offen
+  PASS - Zahlung schlaegt fehl | DECLINED
+  PASS - Fehlermeldung nennt den Grund | Zahlung fehlgeschlagen: Die Karte wurde abgelehnt (simuliert). Der Betrag bleibt offen.
+  PASS - Datensatz bleibt offen | offen CHF 6.00
+  => PASS
+
+== TC15: Ausfahrt mit bezahltem, gueltigem Status oeffnet die Ausfahrtsschranke rechtzeitig
+  PASS - Zahlung lag weniger als 15 Minuten zurueck | noch 15 min gueltig
+  PASS - Ergebnis OPEN, Schranke geoeffnet | {'t': '91s', 'gate': 'ausfahrt', 'id': '#a268', 'result': 'OPEN', 'opened': '1', 'latency_ms': '22', 'free': '2'}
+  PASS - Reaktionszeit unter 3 s | 44 ms gesamt, Schranke intern 22 ms
+  => PASS
+
+== TC16: Ausfahrt ohne Bezahlung wird verweigert
+  PASS - Schranke bleibt zu | {'t': '91s', 'gate': 'ausfahrt', 'id': '#9850', 'result': 'UNPAID', 'opened': '0', 'latency_ms': '24', 'free': '2'}
+  PASS - Anzeige fordert zur Bezahlung an der Kasse auf | Bitte zuerst an der Kasse bezahlen. Offener Betrag: CHF 6.00.
+  PASS - Fahrzeug gilt weiter als im Parkhaus
+  => PASS
+
+== TC05: Anzeige freier Plaetze aktualisiert sich nach einer Ausfahrt
+  PASS - Ausfahrt OPEN | OPEN
+  PASS - Anzeige um 1 erhoeht innerhalb von 5 s | 2 -> 3 nach 0.0 s
+  => PASS
+
+== TC17: Ausfahrt mit abgelaufener Zahlungsgueltigkeit wird verweigert
+  PASS - Seit der Zahlung vergingen mindestens 15 Minuten Simulationszeit | 46 s echt = 15.3 min simuliert (Zeitraffer 20)
+  PASS - Schranke bleibt zu | {'t': '135s', 'gate': 'ausfahrt', 'id': '#7911', 'result': 'EXPIRED', 'opened': '0', 'latency_ms': '22', 'free': '3'}
+  PASS - Anzeige fordert zur erneuten Bezahlung auf | Die Zahlung ist älter als 15 Minuten. Bitte an der Kasse bezahlen. Offener Betrag: CHF 0.00.
+  => PASS
+
+== TC18: Ruftaste bei nicht erkanntem Kennzeichen loest den Fallback aus
+  PASS - Vorbedingung: Erkennung fehlgeschlagen, Schranke bleibt zu | INVALID
+  PASS - Anfrage erscheint beim Personal | [{'no': 1, 'outbound': False, 'state': 'pending', 'waitSec': 0}]
+  PASS - Ticket ausgegeben | Ticket TK0001 ausgegeben, Schranke öffnet.
+  PASS - Reaktion innerhalb von 60 s | 5 s nach Druck der Ruftaste
+  PASS - Einfahrtsschranke oeffnet nach der Ticketausgabe | Ticket TK0001 ausgegeben, die Schranke öffnet.
+  => PASS
+
+== TC19: Mit manuellem Ticket erfasste Einfahrtszeit wird fuer die Gebuehrenberechnung verwendet
+  PASS - Ticket TK0001 ist als Datensatz mit Einfahrtszeit erfasst | {'no': 5, 'id': 'TK0001', 'ticket': True, 'entry': 'T1 11:30:53', 'exited': False, 'exit': '', 'paid': ''}
+  PASS - Einfahrtszeit der Kasse entspricht der des Tickets | T1 11:30:53
+  PASS - Parkdauer = jetzt minus Einfahrtszeit des Tickets (+/- 60 s) | 00:00:22
+  PASS - Betrag korrekt | Dauer 00:00:22, Betrag CHF 2.00
+  => PASS
+
+== TC21: Zugriff auf Kennzeichendaten ist auf berechtigtes Betriebspersonal beschraenkt
+  PASS - Personalseite ohne Anmeldung gesperrt | HTTP 401
+  PASS - Fahrzeugliste ohne Anmeldung gesperrt
+  PASS - Falsches Passwort wird abgewiesen
+  PASS - Mit Personal-Zugang ist die Liste einsehbar
+  PASS - Oeffentliche Seiten und Schnittstellen enthalten keine Kennzeichen | keine Kennzeichen in den freien Antworten
+  => PASS
+
+== TC20: Kennzeichendaten werden spaetestens 24 Stunden nach bezahlter Ausfahrt geloescht oder anonymisiert
+  PASS - Vorbedingung: Fahrzeug ist ausgefahren
+  PASS - Datensatz ZH123456 nicht mehr in der Fahrzeugliste
+  PASS - Datensatz AG987654 (ebenfalls ausgefahren) nicht mehr in der Fahrzeugliste
+  PASS - Fahrzeuge im Haus bleiben erhalten
+  PASS - Kassen-Ereignisprotokoll enthaelt das Kennzeichen nicht mehr | kein Treffer
+  PASS - Schranken-Ereignisprotokoll enthaelt das Kennzeichen nicht mehr | kein Treffer
+  => PASS
+
+== TC06: Einfahrt wird bei Vollbelegung verweigert, auch mit gueltigem Kennzeichen
+  PASS - Parkhaus mit 5 Fahrzeugen voll belegt, Anzeige zeigt 0 | freie Plaetze: 0
+  PASS - Einfahrt mit gueltigem Kennzeichen abgewiesen | {'t': '169s', 'gate': 'einfahrt', 'id': '#7a49', 'result': 'FULL', 'opened': '0', 'latency_ms': '22', 'free': '0'}
+  PASS - Anzeige zeigt Besetzt | Besetzt. Die Einfahrt ist gesperrt.
+  => PASS
+
+== TC07: Bei jeder Einfahrt wird ein vollstaendiger Datensatz angelegt
+  PASS - Einfahrt OK | OK
+  PASS - Genau ein neuer Datensatz | 0 -> 1
+  PASS - Datensatz mit Kennzeichen sowie Datum und Uhrzeit der Einfahrt | {'no': 1, 'id': 'ZH123456', 'ticket': False, 'entry': 'T2 14:35:01', 'exited': False, 'exit': '', 'paid': ''}
+  => PASS
+
+== TC22: Gesamtablauf Einfahrt bis Ausfahrt inklusive Bezahlstatus-Abfrage zwischen Pico 2 und Pico 1
+  PASS - Vor der Zahlung bleibt die Ausfahrt zu | UNPAID
+  PASS - Zahlung an der Kasse erfolgreich | Zahlung von CHF 2.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.
+  PASS - Nach der Zahlung oeffnet die Ausfahrt | OPEN
+  PASS - Kasse protokolliert beide Abfragen der Schranke (UNPAID, dann OPEN) | ['T2 14:35:05 EXIT id=ZH123456 result=OPEN due=0.00 free=5', 'T2 14:35:03 EXIT id=ZH123456 result=UNPAID due=2.00 free=4']
+  => PASS
+
+== E1: Explorativ: Geraete-Schnittstelle der Kasse ohne Anmeldung
+  PASS - POST /api/entry ohne Anmeldung wird abgewiesen | HTTP 401, Datensatz nicht angelegt
+  PASS - POST /api/exit ohne Anmeldung wird abgewiesen | HTTP 401
+  PASS - POST /api/call ohne Anmeldung wird abgewiesen, keine Anfrage beim Personal | HTTP 401
+  PASS - Falsches Geraete-Token wird abgewiesen | HTTP 401
+  PASS - Schranke meldet Einfahrt weiterhin erfolgreich an die Kasse | OK
+  => PASS
+
+23 von 23 Testfaellen bestanden
+RC=0
+ONLINE 2026-11-12 13:44:34

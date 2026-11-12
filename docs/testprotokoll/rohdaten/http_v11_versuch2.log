@@ -1,0 +1,22 @@
+START 2026-11-12 13:49:05
+PASS - Kasse liefert die Gast-Seite 
+PASS - Schranke liefert den Simulator 
+PASS - US2: Kasse meldet freie Plaetze | {'free': 5, 'capacity': 5, 'occupied': 0, 'simTime': 'T2 20:29:40', 'scale': 60, 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'validMinutes': 15}
+PASS - US1: Einfahrtsschranke oeffnet | {'open': True, 'text': 'Willkommen, die Schranke öffnet. Freie Plätze: 4.'}
+PASS - US2: freie Plaetze sinken um 1 | {'free': 4, 'capacity': 5, 'occupied': 1, 'simTime': 'T2 20:29:47', 'scale': 60, 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'validMinutes': 15}
+PASS - US4: Gebuehr und Parkdauer werden angezeigt | {'found': True, 'id': 'ZH788751', 'entry': 'T2 20:29:44', 'duration': '00:02:06', 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'fee': '2.00', 'paid': '0.00', 'due': '2.00', 'payValid': False, 'validLeftMin': 0}
+PASS - US6: unbezahlt bleibt die Ausfahrt zu, Display fordert zur Zahlung auf | {'open': False, 'text': 'Bitte zuerst an der Kasse bezahlen. Offener Betrag: CHF 2.00.'}
+PASS - US5: fehlgeschlagene Zahlung nennt den Grund | {'result': 'DECLINED', 'message': 'Zahlung fehlgeschlagen: Die Karte wurde abgelehnt (simuliert). Der Betrag bleibt offen.'}
+PASS - US5: nach fehlgeschlagener Zahlung bleibt der Betrag offen | {'found': True, 'id': 'ZH788751', 'entry': 'T2 20:29:44', 'duration': '00:02:14', 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'fee': '2.00', 'paid': '0.00', 'due': '2.00', 'payValid': False, 'validLeftMin': 0}
+PASS - US5: Bezahlung mit Twint erfolgreich | {'result': 'OK', 'message': 'Zahlung von CHF 2.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig.'}
+PASS - US6: bezahlt -> Ausfahrtsschranke oeffnet | {'open': True, 'text': 'Gute Fahrt, die Schranke öffnet.'}
+PASS - US8: Personal-Daten ohne Anmeldung gesperrt (401) | 401
+PASS - US8: Personal sieht die Fahrzeugliste 
+PASS - US7: Ruftaste erscheint beim Personal | [{'no': 1, 'outbound': False, 'state': 'pending', 'waitSec': 0}]
+PASS - US7: Personal gibt Ticket aus | {'result': 'OK', 'message': 'Ticket TK0001 ausgegeben, Schranke öffnet.'}
+PASS - US7: Einfahrtsschranke oeffnet nach Freigabe | {'open': True, 'text': 'Ticket TK0001 ausgegeben, die Schranke öffnet.'}
+PASS - US8: Datensatz nach 24 h (Simulation) geloescht 
+
+17 von 17 Pruefungen bestanden
+RC=0
+ONLINE 2026-11-12 13:50:12

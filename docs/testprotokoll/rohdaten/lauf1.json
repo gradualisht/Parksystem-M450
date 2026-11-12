@@ -1,0 +1,606 @@
+{
+ "started": "2026-11-12 13:34:05",
+ "ended": "2026-11-12 13:35:50",
+ "results": [
+  {
+   "id": "TC01",
+   "title": "Einfahrt mit gueltigem Kennzeichen oeffnet die Einfahrtsschranke rechtzeitig",
+   "soll": "Schranke oeffnet innerhalb von 3 Sekunden nach Eingabe",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Ergebnis OK, Schranke geoeffnet",
+     "ok": true,
+     "ist": "{'t': '143s', 'gate': 'einfahrt', 'id': 'ZH123456', 'result': 'OK', 'opened': '1', 'latency_ms': '20', 'free': '4'}"
+    },
+    {
+     "what": "Reaktionszeit unter 3 s (HTTP-Gesamtdauer)",
+     "ok": true,
+     "ist": "45 ms gesamt, Schranke intern 20 ms"
+    },
+    {
+     "what": "Anzeige am Tor",
+     "ok": true,
+     "ist": "Willkommen, die Schranke öffnet. Freie Plätze: 4."
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC02",
+   "title": "Einfahrtsdaten werden korrekt gespeichert",
+   "soll": "Datensatz mit Kennzeichen ZH123456 sowie korrektem Einfahrtsdatum und -uhrzeit",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Datensatz vorhanden",
+     "ok": true,
+     "ist": "{'no': 1, 'id': 'ZH123456', 'ticket': False, 'entry': 'T1 11:09:47', 'exited': False, 'exit': '', 'paid': ''}"
+    },
+    {
+     "what": "Einfahrtszeit liegt zwischen Eingabe und Abruf",
+     "ok": true,
+     "ist": "T1 11:09:47 (Simulationszeit vor/nach Eingabe: 40186/40188 s)"
+    },
+    {
+     "what": "Fahrzeug ist als eingefahren (nicht ausgefahren) gefuehrt",
+     "ok": true,
+     "ist": ""
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC03",
+   "title": "Ungueltiges oder leeres Kennzeichen loest den Fallback aus",
+   "soll": "Schranke bleibt geschlossen, Ruftaste wird angeboten, kein Datensatz entsteht",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "leeres Feld: Schranke bleibt zu",
+     "ok": true,
+     "ist": "NOT_RECOGNIZED"
+    },
+    {
+     "what": "leeres Feld: Anzeige bietet die Ruftaste an",
+     "ok": true,
+     "ist": "Kennzeichen nicht erkannt. Bitte die Ruftaste drücken."
+    },
+    {
+     "what": "Wert '??-???': Schranke bleibt zu",
+     "ok": true,
+     "ist": "INVALID"
+    },
+    {
+     "what": "Wert '??-???': Anzeige bietet die Ruftaste an",
+     "ok": true,
+     "ist": "Kennzeichen nicht erkannt. Bitte die Ruftaste drücken."
+    },
+    {
+     "what": "Kein neuer Datensatz",
+     "ok": true,
+     "ist": ""
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC04",
+   "title": "Anzeige freier Plaetze aktualisiert sich nach einer Einfahrt",
+   "soll": "Anzeige zeigt spaetestens 5 s nach der Einfahrt einen um 1 reduzierten Wert",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Einfahrt OK",
+     "ok": true,
+     "ist": "OK"
+    },
+    {
+     "what": "Anzeige um 1 reduziert innerhalb von 5 s",
+     "ok": true,
+     "ist": "4 -> 3 nach 0.0 s"
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC08",
+   "title": "Datensaetze zweier gleichzeitig anwesender Fahrzeuge bleiben eindeutig zugeordnet",
+   "soll": "Beide Datensaetze bleiben dem richtigen Kennzeichen zugeordnet, keine Vermischung",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Zwei getrennte Datensaetze vorhanden",
+     "ok": true,
+     "ist": "Nr. 1 und 2"
+    },
+    {
+     "what": "Datensatz AG987654 unveraendert",
+     "ok": true,
+     "ist": "{'no': 2, 'id': 'AG987654', 'ticket': False, 'entry': 'T1 11:09:53', 'exited': False, 'exit': '', 'paid': ''}"
+    },
+    {
+     "what": "Datensatz ZH123456 behaelt Einfahrtszeit",
+     "ok": true,
+     "ist": "T1 11:09:47"
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC09",
+   "title": "Korrekte Gebuehrenberechnung bei kurzer Parkdauer",
+   "soll": "Parkdauer entspricht der Standzeit, Betrag = eine angefangene 30-Minuten-Einheit zu CHF 2.00",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Parkdauer entspricht der Standzeit (+/- 60 s Simulation)",
+     "ok": true,
+     "ist": "00:00:09 angezeigt, 10 s aus Einfahrtszeit"
+    },
+    {
+     "what": "Parkdauer hoechstens 30 Minuten",
+     "ok": true,
+     "ist": "00:00:09"
+    },
+    {
+     "what": "Betrag CHF 2.00",
+     "ok": true,
+     "ist": "Gebuehr 2.00, offen 2.00"
+    }
+   ],
+   "time": "13:34:12",
+   "status": "PASS"
+  },
+  {
+   "id": "TC11",
+   "title": "Gebuehr ist vor dem Ausloesen der Zahlung einsehbar",
+   "soll": "Betrag und Parkdauer sind sichtbar, ohne dass eine Zahlung ausgeloest wurde",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Betrag und Parkdauer werden angezeigt",
+     "ok": true,
+     "ist": "{'found': True, 'id': 'ZH123456', 'entry': 'T1 11:09:47', 'duration': '00:00:10', 'tariff': 'CHF 2.00 pro angefangene 30 Minuten', 'fee': '2.00', 'paid': '0.00', 'due': '2.00', 'payValid': False, 'validLeftMin': 0}"
+    },
+    {
+     "what": "Noch keine Zahlung erfasst",
+     "ok": true,
+     "ist": "leer"
+    }
+   ],
+   "time": "13:34:13",
+   "status": "PASS"
+  },
+  {
+   "id": "TC10",
+   "title": "Korrekte Gebuehrenberechnung bei laengerer Parkdauer ueber mehrere Tarifeinheiten",
+   "soll": "Betrag = Anzahl angefangener 30-Minuten-Einheiten x CHF 2.00",
+   "scale": 600,
+   "checks": [
+    {
+     "what": "Einfahrt OK",
+     "ok": true,
+     "ist": "OK"
+    },
+    {
+     "what": "Parkdauer ueber 1 Stunde",
+     "ok": true,
+     "ist": "01:03:18"
+    },
+    {
+     "what": "Betrag = 3 angefangene Einheiten x CHF 2.00 = CHF 6.00",
+     "ok": true,
+     "ist": "Dauer 01:03:18, Betrag CHF 6.00"
+    }
+   ],
+   "time": "13:34:13",
+   "status": "PASS"
+  },
+  {
+   "id": "TC12",
+   "title": "Erfolgreiche Zahlung mit erstem Zahlungsmittel (Karte) markiert den Datensatz als bezahlt",
+   "soll": "Datensatz wechselt auf bezahlt, gueltig fuer die Ausfahrt",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Zahlung erfolgreich",
+     "ok": true,
+     "ist": "Zahlung von CHF 6.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig."
+    },
+    {
+     "what": "Status bezahlt, gueltig fuer die Ausfahrt",
+     "ok": true,
+     "ist": "offen 0.00, noch gueltig 15 min"
+    },
+    {
+     "what": "Datensatz traegt den bezahlten Betrag",
+     "ok": true,
+     "ist": "6.00"
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC13",
+   "title": "Erfolgreiche Zahlung mit zweitem Zahlungsmittel (Twint) markiert den Datensatz als bezahlt",
+   "soll": "Datensatz wechselt auf bezahlt, gueltig fuer die Ausfahrt",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Zahlung erfolgreich",
+     "ok": true,
+     "ist": "Zahlung von CHF 6.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig."
+    },
+    {
+     "what": "Status bezahlt, gueltig fuer die Ausfahrt",
+     "ok": true,
+     "ist": "offen 0.00, noch gueltig 15 min"
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC14",
+   "title": "Fehlgeschlagene Zahlung hinterlaesst den Datensatz auf offen",
+   "soll": "Datensatz bleibt offen, Fehlermeldung mit erkennbarem Grund",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Zahlung schlaegt fehl",
+     "ok": true,
+     "ist": "DECLINED"
+    },
+    {
+     "what": "Fehlermeldung nennt den Grund",
+     "ok": true,
+     "ist": "Zahlung fehlgeschlagen: Die Karte wurde abgelehnt (simuliert). Der Betrag bleibt offen."
+    },
+    {
+     "what": "Datensatz bleibt offen",
+     "ok": true,
+     "ist": "offen CHF 6.00"
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC15",
+   "title": "Ausfahrt mit bezahltem, gueltigem Status oeffnet die Ausfahrtsschranke rechtzeitig",
+   "soll": "Ausfahrtsschranke oeffnet innerhalb von 3 Sekunden",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Zahlung lag weniger als 15 Minuten zurueck",
+     "ok": true,
+     "ist": "noch 15 min gueltig"
+    },
+    {
+     "what": "Ergebnis OPEN, Schranke geoeffnet",
+     "ok": true,
+     "ist": "{'t': '150s', 'gate': 'ausfahrt', 'id': 'ZH123456', 'result': 'OPEN', 'opened': '1', 'latency_ms': '20', 'free': '2'}"
+    },
+    {
+     "what": "Reaktionszeit unter 3 s",
+     "ok": true,
+     "ist": "41 ms gesamt, Schranke intern 20 ms"
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC16",
+   "title": "Ausfahrt ohne Bezahlung wird verweigert",
+   "soll": "Ausfahrtsschranke bleibt geschlossen, Anzeige fordert zur Bezahlung an der Kasse auf",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Schranke bleibt zu",
+     "ok": true,
+     "ist": "{'t': '151s', 'gate': 'ausfahrt', 'id': 'ZH777222', 'result': 'UNPAID', 'opened': '0', 'latency_ms': '21', 'free': '2'}"
+    },
+    {
+     "what": "Anzeige fordert zur Bezahlung an der Kasse auf",
+     "ok": true,
+     "ist": "Bitte zuerst an der Kasse bezahlen. Offener Betrag: CHF 6.00."
+    },
+    {
+     "what": "Fahrzeug gilt weiter als im Parkhaus",
+     "ok": true,
+     "ist": ""
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC05",
+   "title": "Anzeige freier Plaetze aktualisiert sich nach einer Ausfahrt",
+   "soll": "Anzeige zeigt spaetestens 5 s nach der Ausfahrt einen um 1 erhoehten Wert",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Ausfahrt OPEN",
+     "ok": true,
+     "ist": "OPEN"
+    },
+    {
+     "what": "Anzeige um 1 erhoeht innerhalb von 5 s",
+     "ok": true,
+     "ist": "2 -> 3 nach 0.0 s"
+    }
+   ],
+   "time": "13:34:19",
+   "status": "PASS"
+  },
+  {
+   "id": "TC17",
+   "title": "Ausfahrt mit abgelaufener Zahlungsgueltigkeit wird verweigert",
+   "soll": "Ausfahrtsschranke bleibt geschlossen, Aufforderung zur erneuten Bezahlung",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Seit der Zahlung vergingen mindestens 15 Minuten Simulationszeit",
+     "ok": true,
+     "ist": "46 s echt = 15.3 min simuliert (Zeitraffer 20)"
+    },
+    {
+     "what": "Schranke bleibt zu",
+     "ok": true,
+     "ist": "{'t': '196s', 'gate': 'ausfahrt', 'id': 'AG555333', 'result': 'EXPIRED', 'opened': '0', 'latency_ms': '20', 'free': '3'}"
+    },
+    {
+     "what": "Anzeige fordert zur erneuten Bezahlung auf",
+     "ok": true,
+     "ist": "Die Zahlung ist älter als 15 Minuten. Bitte an der Kasse bezahlen. Offener Betrag: CHF 0.00."
+    }
+   ],
+   "time": "13:34:22",
+   "status": "PASS"
+  },
+  {
+   "id": "TC18",
+   "title": "Ruftaste bei nicht erkanntem Kennzeichen loest den Fallback aus",
+   "soll": "Innerhalb von 60 Sekunden wird ein manuelles Ticket ausgegeben (Servicezentrale meldet sich)",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Vorbedingung: Erkennung fehlgeschlagen, Schranke bleibt zu",
+     "ok": true,
+     "ist": "INVALID"
+    },
+    {
+     "what": "Anfrage erscheint beim Personal",
+     "ok": true,
+     "ist": "[{'no': 1, 'outbound': False, 'state': 'pending', 'waitSec': 0}]"
+    },
+    {
+     "what": "Ticket ausgegeben",
+     "ok": true,
+     "ist": "Ticket TK0001 ausgegeben, Schranke öffnet."
+    },
+    {
+     "what": "Reaktion innerhalb von 60 s",
+     "ok": true,
+     "ist": "5 s nach Druck der Ruftaste"
+    },
+    {
+     "what": "Einfahrtsschranke oeffnet nach der Ticketausgabe",
+     "ok": true,
+     "ist": "Ticket TK0001 ausgegeben, die Schranke öffnet."
+    }
+   ],
+   "time": "13:35:05",
+   "status": "PASS"
+  },
+  {
+   "id": "TC19",
+   "title": "Mit manuellem Ticket erfasste Einfahrtszeit wird fuer die Gebuehrenberechnung verwendet",
+   "soll": "Parkdauer basiert auf der Einfahrtszeit des Tickets, Betrag wird korrekt berechnet",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Ticket TK0001 ist als Datensatz mit Einfahrtszeit erfasst",
+     "ok": true,
+     "ist": "{'no': 5, 'id': 'TK0001', 'ticket': True, 'entry': 'T1 12:30:24', 'exited': False, 'exit': '', 'paid': ''}"
+    },
+    {
+     "what": "Einfahrtszeit der Kasse entspricht der des Tickets",
+     "ok": true,
+     "ist": "T1 12:30:24"
+    },
+    {
+     "what": "Parkdauer = jetzt minus Einfahrtszeit des Tickets (+/- 60 s)",
+     "ok": true,
+     "ist": "00:00:22"
+    },
+    {
+     "what": "Betrag korrekt",
+     "ok": true,
+     "ist": "Dauer 00:00:22, Betrag CHF 2.00"
+    }
+   ],
+   "time": "13:35:11",
+   "status": "PASS"
+  },
+  {
+   "id": "TC21",
+   "title": "Zugriff auf Kennzeichendaten ist auf berechtigtes Betriebspersonal beschraenkt",
+   "soll": "Zugriff ohne Betriebspersonal-Berechtigung wird verweigert, Kennzeichen sind nicht einsehbar",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Personalseite ohne Anmeldung gesperrt",
+     "ok": true,
+     "ist": "HTTP 401"
+    },
+    {
+     "what": "Fahrzeugliste ohne Anmeldung gesperrt",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Falsches Passwort wird abgewiesen",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Mit Personal-Zugang ist die Liste einsehbar",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Oeffentliche Seiten und Schnittstellen enthalten keine Kennzeichen",
+     "ok": false,
+     "ist": "{'192.168.4.100/api/status': ['ZH123456', 'AG987654', 'ZH777222', 'AG555333']}"
+    }
+   ],
+   "time": "13:35:12",
+   "status": "FAIL"
+  },
+  {
+   "id": "TC20",
+   "title": "Kennzeichendaten werden spaetestens 24 Stunden nach bezahlter Ausfahrt geloescht oder anonymisiert",
+   "soll": "Kennzeichen ZH123456 ist geloescht oder so anonymisiert, dass kein Rueckschluss mehr moeglich ist",
+   "scale": 3600,
+   "checks": [
+    {
+     "what": "Vorbedingung: Fahrzeug ist ausgefahren",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Datensatz ZH123456 nicht mehr in der Fahrzeugliste",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Datensatz AG987654 (ebenfalls ausgefahren) nicht mehr in der Fahrzeugliste",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Fahrzeuge im Haus bleiben erhalten",
+     "ok": true,
+     "ist": ""
+    },
+    {
+     "what": "Kassen-Ereignisprotokoll enthaelt das Kennzeichen nicht mehr",
+     "ok": false,
+     "ist": "Treffer im Protokoll der Kasse"
+    },
+    {
+     "what": "Schranken-Ereignisprotokoll enthaelt das Kennzeichen nicht mehr",
+     "ok": false,
+     "ist": "Treffer im Protokoll der Schranke"
+    }
+   ],
+   "time": "13:35:12",
+   "status": "FAIL"
+  },
+  {
+   "id": "TC06",
+   "title": "Einfahrt wird bei Vollbelegung verweigert, auch mit gueltigem Kennzeichen",
+   "soll": "Anzeige zeigt Besetzt, Einfahrtsschranke oeffnet nicht (Testkapazitaet 5 statt 3)",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Parkhaus mit 5 Fahrzeugen voll belegt, Anzeige zeigt 0",
+     "ok": true,
+     "ist": "freie Plaetze: 0"
+    },
+    {
+     "what": "Einfahrt mit gueltigem Kennzeichen abgewiesen",
+     "ok": true,
+     "ist": "{'t': '230s', 'gate': 'einfahrt', 'id': 'ZH555111', 'result': 'FULL', 'opened': '0', 'latency_ms': '21', 'free': '0'}"
+    },
+    {
+     "what": "Anzeige zeigt Besetzt",
+     "ok": true,
+     "ist": "Besetzt. Die Einfahrt ist gesperrt."
+    }
+   ],
+   "time": "13:35:39",
+   "status": "PASS"
+  },
+  {
+   "id": "TC07",
+   "title": "Bei jeder Einfahrt wird ein vollstaendiger Datensatz angelegt",
+   "soll": "Neuer Datensatz mit Kennzeichen, Einfahrtsdatum und -uhrzeit ist vorhanden",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Einfahrt OK",
+     "ok": true,
+     "ist": "OK"
+    },
+    {
+     "what": "Genau ein neuer Datensatz",
+     "ok": true,
+     "ist": "0 -> 1"
+    },
+    {
+     "what": "Datensatz mit Kennzeichen sowie Datum und Uhrzeit der Einfahrt",
+     "ok": true,
+     "ist": "{'no': 1, 'id': 'ZH123456', 'ticket': False, 'entry': 'T2 15:34:48', 'exited': False, 'exit': '', 'paid': ''}"
+    }
+   ],
+   "time": "13:35:46",
+   "status": "PASS"
+  },
+  {
+   "id": "TC22",
+   "title": "Gesamtablauf Einfahrt bis Ausfahrt inklusive Bezahlstatus-Abfrage zwischen Pico 2 und Pico 1",
+   "soll": "Ausfahrtsschranke oeffnet nur, weil Pico 2 von Pico 1 den Status bezahlt zurueckerhaelt",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "Vor der Zahlung bleibt die Ausfahrt zu",
+     "ok": true,
+     "ist": "UNPAID"
+    },
+    {
+     "what": "Zahlung an der Kasse erfolgreich",
+     "ok": true,
+     "ist": "Zahlung von CHF 2.00 erfolgreich. Die Ausfahrt ist 15 Minuten gültig."
+    },
+    {
+     "what": "Nach der Zahlung oeffnet die Ausfahrt",
+     "ok": true,
+     "ist": "OPEN"
+    },
+    {
+     "what": "Kasse protokolliert beide Abfragen der Schranke (UNPAID, dann OPEN)",
+     "ok": true,
+     "ist": "['T2 15:34:52 EXIT id=ZH123456 result=OPEN due=0.00 free=5', 'T2 15:34:50 EXIT id=ZH123456 result=UNPAID due=2.00 free=4', 'T1 12:13:22 EXIT id=ZH123456 result=OPEN due=0.00 free=2']"
+    }
+   ],
+   "time": "13:35:46",
+   "status": "PASS"
+  },
+  {
+   "id": "E1",
+   "title": "Explorativ: Geraete-Schnittstelle der Kasse ohne Anmeldung",
+   "soll": "Nur die Schranke darf Ein- und Ausfahrten registrieren; ein anderer WLAN-Teilnehmer nicht",
+   "scale": 20,
+   "checks": [
+    {
+     "what": "POST /api/entry ohne Anmeldung wird abgewiesen",
+     "ok": false,
+     "ist": "HTTP 200, Datensatz angelegt"
+    }
+   ],
+   "time": "13:35:46",
+   "status": "FAIL"
+  }
+ ]
+}
