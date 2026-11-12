@@ -266,11 +266,14 @@ ExitDecision ParkingDb::tryExit(const std::string &id, uint32_t nowSec) {
   return d;
 }
 
-uint32_t ParkingDb::purge(uint32_t nowSec) {
+uint32_t ParkingDb::purge(uint32_t nowSec, std::vector<std::string> *removedIds) {
   uint32_t removed = 0;
   for (size_t i = records_.size(); i > 0; i--) {
     const ParkRecord &rec = records_[i - 1];
     if (rec.exited && nowSec - rec.exitSec >= RETENTION_SECONDS) {
+      if (removedIds != NULL) {
+        removedIds->push_back(rec.id);
+      }
       records_.erase(records_.begin() + (long)(i - 1));
       removed++;
     }

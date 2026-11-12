@@ -20,4 +20,12 @@ long jsonGetInt(const std::string &body, const std::string &key, long fallback);
 // Prozent-Kodierung fuer URL-Parameter.
 std::string urlEncode(const std::string &text);
 
+// Pseudonym fuer ein Kennzeichen: "#" plus 4 Hex-Stellen (FNV-1a). Gleiches Kennzeichen ergibt
+// dasselbe Pseudonym, ein Rueckschluss auf das Kennzeichen ist nicht moeglich (US8).
+std::string pseudonymize(const std::string &id);
+
+// Ersetzt in einer Protokollzeile jeden Wert von "id=<wert>" durch sein Pseudonym. Mit onlyId
+// wird nur dieses eine Kennzeichen ersetzt (Anonymisierung nach der Loeschfrist).
+std::string maskIdInLogLine(const std::string &line, const std::string &onlyId = "");
+
 #endif

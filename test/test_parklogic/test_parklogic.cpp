@@ -310,6 +310,19 @@ void test_purge_removes_exited_record_after_24_hours(void) {
   TEST_ASSERT_EQUAL_UINT32(0, db.records().size());
 }
 
+void test_purge_reports_removed_plates(void) {
+  ParkingDb db(3);
+  db.enter("ZH1", 0);
+  db.enter("ZH2", 0);
+  uint32_t paid = 0;
+  db.pay("ZH1", "karte", false, 60, paid);
+  db.tryExit("ZH1", 100);
+  std::vector<std::string> removed;
+  TEST_ASSERT_EQUAL_UINT32(1, db.purge(100 + RETENTION_SECONDS, &removed));
+  TEST_ASSERT_EQUAL_UINT32(1, removed.size());
+  TEST_ASSERT_EQUAL_STRING("ZH1", removed[0].c_str());
+}
+
 void test_purge_keeps_parked_vehicles(void) {
   ParkingDb db(3);
   db.enter("ZH1", 0);
@@ -367,6 +380,7 @@ int main(int argc, char **argv) {
   RUN_TEST(test_ticket_refused_when_full);
   RUN_TEST(test_ticket_holder_can_pay_and_exit);
   RUN_TEST(test_purge_removes_exited_record_after_24_hours);
+  RUN_TEST(test_purge_reports_removed_plates);
   RUN_TEST(test_purge_keeps_parked_vehicles);
   RUN_TEST(test_clear_empties_database_and_restarts_numbering);
   return UNITY_END();

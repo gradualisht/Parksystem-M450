@@ -72,6 +72,13 @@ static void logEvent(const char *fmt, ...) {
   }
 }
 
+// Ersetzt ein geloeschtes Kennzeichen im Ereignisprotokoll durch sein Pseudonym (US8 / AC1).
+static void anonymizeLog(const std::string &id) {
+  for (size_t i = 0; i < eventLog.size(); i++) {
+    eventLog[i] = maskIdInLogLine(eventLog[i], id);
+  }
+}
+
 static void sendJson(int code, const std::string &body) {
   server.sendHeader("Cache-Control", "no-store");
   server.send(code, "application/json", String(body.c_str()));
@@ -146,9 +153,22 @@ static void handlePay() {
 
 // ---- Geraete-Schnittstelle fuer den Schranken-Pico -------------------------
 
+// Nur der Schranken-Pico darf Ein- und Ausfahrten sowie Ruftasten melden (Befund F3).
+static bool deviceAuthorized() {
+  if (server.arg("token") == DEVICE_TOKEN) {
+    return true;
+  }
+  logEvent("DEVICE_AUTH denied uri=%s", server.uri().c_str());
+  sendJson(401, "{\"result\":\"UNAUTHORIZED\"}");
+  return false;
+}
+
 static void handleFree() { sendJson(200, "{" + freeJson() + "}"); }
 
 static void handleEntry() {
+  if (!deviceAuthorized()) {
+    return;
+  }
   std::string id = normalizeId(server.arg("id").c_str());
   EntryResult r = db.enter(id, simNow());
   const char *name = r == ENTRY_OK        ? "OK"
@@ -160,6 +180,9 @@ static void handleEntry() {
 }
 
 static void handleExit() {
+  if (!deviceAuthorized()) {
+    return;
+  }
   std::string id = normalizeId(server.arg("id").c_str());
   ExitDecision d = db.tryExit(id, simNow());
   const char *name = d.result == EXIT_OPEN      ? "OPEN"
@@ -182,6 +205,9 @@ static ServiceCall *findCall(uint32_t no) {
 }
 
 static void handleCall() {
+  if (!deviceAuthorized()) {
+    return;
+  }
   ServiceCall call;
   call.no = nextCallNo++;
   call.outbound = server.arg("dir") == "out";
@@ -196,6 +222,9 @@ static void handleCall() {
 }
 
 static void handleCallStatus() {
+  if (!deviceAuthorized()) {
+    return;
+  }
   ServiceCall *call = findCall((uint32_t)server.arg("call").toInt());
   if (call == NULL) {
     sendJson(404, "{\"state\":\"unknown\"}");
@@ -358,6 +387,7 @@ static void handleCommand(char *line) {
     Serial.println(message.c_str());
   } else if (strcmp(cmd, "reset") == 0) {
     db.clear();
+    eventLog.clear();  // die Datensaetze sind geloescht, also auch die Kennzeichen im Protokoll
     calls.clear();
     nextCallNo = 1;
     logEvent("RESET records cleared");
@@ -433,7 +463,11 @@ void loop() {
   uint32_t nowMs = millis();
   if (nowMs - lastTickMs >= 1000) {
     lastTickMs = nowMs;
-    uint32_t removed = db.purge(simNow());
+    std::vector<std::string> removedIds;
+    uint32_t removed = db.purge(simNow(), &removedIds);
+    for (size_t i = 0; i < removedIds.size(); i++) {
+      anonymizeLog(removedIds[i]);  // Kennzeichen auch aus dem Ereignisprotokoll entfernen (Befund F2)
+    }
     if (removed > 0) {
       logEvent("PURGE removed=%u retention=24h", (unsigned)removed);
     }

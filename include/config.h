@@ -20,6 +20,11 @@
 #define STAFF_USER "personal"
 #define STAFF_PASSWORD "park2026"
 
+// Geraete-Token: Der Schranken-Pico weist sich damit bei der Kasse aus. Ohne Token weist die Kasse
+// /api/entry, /api/exit, /api/call und /api/callstatus mit 401 ab (Befund F3). Fuer den echten
+// Betrieb aendern, die Uebertragung ist unverschluesseltes HTTP im geschlossenen WLAN.
+#define DEVICE_TOKEN "ps-geraet-2026"
+
 // Parkhaus (US2): kleine Kapazitaet, damit "Besetzt" in der Demo schnell erreichbar ist.
 const uint32_t PARK_CAPACITY = 5;
 

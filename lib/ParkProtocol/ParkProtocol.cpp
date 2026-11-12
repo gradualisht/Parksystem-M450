@@ -1,6 +1,7 @@
 #include "ParkProtocol.h"
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 std::string jsonEscape(const std::string &text) {
@@ -94,6 +95,43 @@ std::string urlEncode(const std::string &text) {
       snprintf(buf, sizeof(buf), "%%%02X", (unsigned)c);
       out += buf;
     }
+  }
+  return out;
+}
+
+std::string pseudonymize(const std::string &id) {
+  uint32_t hash = 2166136261u;
+  for (size_t i = 0; i < id.size(); i++) {
+    hash ^= (unsigned char)id[i];
+    hash *= 16777619u;
+  }
+  char buf[8];
+  snprintf(buf, sizeof(buf), "#%04x", (unsigned)(hash & 0xFFFFu));
+  return buf;
+}
+
+std::string maskIdInLogLine(const std::string &line, const std::string &onlyId) {
+  std::string out;
+  size_t pos = 0;
+  while (pos < line.size()) {
+    size_t hit = line.find("id=", pos);
+    // Nur ein eigenstaendiges Feld "id=" (Zeilenanfang oder Leerzeichen davor), nicht z. B. "paid="
+    while (hit != std::string::npos && hit > 0 && line[hit - 1] != ' ') {
+      hit = line.find("id=", hit + 1);
+    }
+    if (hit == std::string::npos) {
+      out += line.substr(pos);
+      break;
+    }
+    size_t valueStart = hit + 3;
+    size_t valueEnd = line.find(' ', valueStart);
+    if (valueEnd == std::string::npos) {
+      valueEnd = line.size();
+    }
+    std::string value = line.substr(valueStart, valueEnd - valueStart);
+    out += line.substr(pos, valueStart - pos);
+    out += (value.empty() || (!onlyId.empty() && value != onlyId)) ? value : pseudonymize(value);
+    pos = valueEnd;
   }
   return out;
 }

@@ -145,7 +145,9 @@ static int kasseRequest(bool post, const std::string &path, std::string &out) {
   rp2040.wdt_reset();  // Verbindungsaufbau (bis 5 s) und Antwort (2 s) bleiben unter dem Watchdog
   http.setReuse(false);
   http.setTimeout(2000);
-  if (!http.begin(String(KASSE_BASE_URL) + path.c_str())) {
+  std::string url = std::string(KASSE_BASE_URL) + path + (path.find('?') == std::string::npos ? "?" : "&") +
+                    "token=" + DEVICE_TOKEN;
+  if (!http.begin(String(url.c_str()))) {
     kasseOnline = false;
     return -1;
   }
@@ -339,7 +341,8 @@ static void handleStatus() {
                      ",\"entry\":" + gateJson(entryGate) + ",\"exit\":" + gateJson(exitGate) +
                      ",\"latencyMs\":" + std::to_string(lastLatencyMs) + ",\"log\":[";
   for (size_t i = 0; i < eventLog.size(); i++) {
-    json += std::string(i ? "," : "") + quoted(eventLog[eventLog.size() - 1 - i]);
+    // Oeffentlich einsehbar: Kennzeichen nur als Pseudonym ausgeben (US8 / AC2, Befund F1)
+    json += std::string(i ? "," : "") + quoted(maskIdInLogLine(eventLog[eventLog.size() - 1 - i]));
   }
   json += "]}";
   sendJson(200, json);

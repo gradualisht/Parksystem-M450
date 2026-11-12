@@ -124,7 +124,8 @@ class ParkingDb {
   ExitDecision tryExit(const std::string &id, uint32_t nowSec);
 
   // Loescht Datensaetze, deren Ausfahrt mehr als 24 h zurueckliegt (US8). Liefert die Anzahl.
-  uint32_t purge(uint32_t nowSec);
+  // Mit removedIds erhaelt der Aufrufer die geloeschten Kennzeichen, um sie auch aus Protokollen zu entfernen.
+  uint32_t purge(uint32_t nowSec, std::vector<std::string> *removedIds = NULL);
 
   const std::vector<ParkRecord> &records() const;
 
